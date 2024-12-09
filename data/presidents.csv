@@ -1,0 +1,44 @@
+presidency-start,presidency-end,nth-presdient,president,president-party,total-nominee,confirmed-nominee,president-full-name
+04/30/1789,03/04/1797,1,Washington,None,14,10,George Washington
+03/04/1797,03/04/1801,2,Adams John,Federalist,4,3,John Adams
+03/04/1801,03/04/1809,3,Jefferson,Democratic-Republican,3,3,Thomas Jefferson
+03/04/1809,03/04/1817,4,Madison,Democratic-Republican,5,2,James Madison
+03/04/1817,03/04/1825,5,Monroe,Democratic-Republican,1,1,James Monroe
+03/04/1825,03/04/1829,6,Adams J. Q.,Democratic-Republican,2,1,John Quincy Adams
+03/04/1829,03/04/1837,7,Jackson,Democrat,8,6,Andrew Jackson
+03/04/1837,03/04/1841,8,Van Buren,Democrat,2,2,Martin Van Buren
+04/04/1841,03/04/1845,10,Tyler,Whig,9,1,John Tyler
+03/04/1845,03/04/1849,11,Polk,Democrat,3,2,James K. Polk
+07/09/1850,03/04/1853,13,Fillmore,Whig,4,1,Millard Fillmore
+03/04/1853,03/04/1857,14,Pierce,Democrat,1,1,Franklin Pierce
+03/04/1857,03/04/1861,15,Buchanan,Democrat,2,1,James Buchanan
+03/04/1861,04/15/1865,16,Lincoln,Republican,5,5,Abraham Lincoln
+04/15/1865,03/04/1869,17,Johnson A.,Democrat,1,0,Andrew Johnson
+03/04/1869,03/04/1877,18,Grant,Republican,8,5,Ulysses S. Grant
+03/04/1877,03/04/1881,19,Hayes,Republican,3,2,Rutherford B. Hayes
+03/04/1881,09/19/1881,20,Garfield,Republican,1,1,James A. Garfield
+09/19/1881,03/04/1885,21,Arthur,Republican,3,2,Chester A. Arthur
+03/04/1885,03/04/1889,22,Cleveland,Democrat,2,2,Grover Cleveland
+03/04/1889,03/04/1893,23,Harrison,Republican,4,4,Benjamin Harrison
+03/04/1893,03/04/1897,24,Cleveland,Democrat,5,2,Grover Cleveland
+03/04/1897,09/14/1901,25,McKinley,Republican,1,1,William McKinley
+09/14/1901,03/04/1909,26,Roosevelt T.,Republican,3,3,Theodore Roosevelt
+03/04/1909,03/04/1913,27,Taft,Republican,6,6,William Howard Taft
+03/04/1913,03/04/1921,28,Wilson,Democrat,3,3,Woodrow Wilson
+03/04/1921,08/02/1923,29,Harding,Republican,5,4,Warren G. Harding
+08/02/1923,03/04/1929,30,Coolidge,Republican,1,1,Calvin Coolidge
+03/04/1929,03/04/1933,31,Hoover,Republican,4,3,Herbert Hoover
+03/04/1933,04/12/1945,32,Roosevelt F.,Democrat,9,9,Franklin D. Roosevelt
+04/12/1945,01/20/1953,33,Truman,Democrat,4,4,Harry S. Truman
+01/20/1953,01/20/1961,34,Eisenhower,Republican,6,5,Dwight D. Eisenhower
+01/20/1961,11/22/1963,35,Kennedy,Democrat,2,2,John F. Kennedy
+11/22/1963,01/20/1969,36,Johnson L.,Democrat,4,2,Lyndon B. Johnson
+01/20/1969,08/09/1974,37,Nixon,Republican,6,4,Richard Nixon
+08/09/1974,01/20/1977,38,Ford,Republican,1,1,Gerald Ford
+01/20/1981,01/20/1989,40,Reagan,Republican,5,4,Ronald Reagan
+01/20/1989,01/20/1993,41,Bush G. H. W.,Republican,2,2,George H. W. Bush
+01/20/1993,01/20/2001,42,Clinton,Democrat,2,2,Bill Clinton
+01/20/2001,01/20/2009,43,Bush G. W.,Republican,4,2,George W. Bush
+01/20/2009,01/20/2017,44,Obama,Democrat,3,2,Barack Obama
+01/20/2017,01/20/2021,45,Trump,Republican,3,3,Donald Trump
+01/20/2021,01/20/2025,46,Biden,Democrat,1,1,Joe Biden
