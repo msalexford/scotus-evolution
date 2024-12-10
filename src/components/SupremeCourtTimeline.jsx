@@ -195,16 +195,19 @@ const SupremeCourtTimeline = () => {
   // Render component
   return (
     <div className="supreme-court-timeline">
-      <h1 style={STYLE_CONFIG["visualization-title"]}>
-        Shaping the Bench: Presidential Influence on the Supreme Court
-      </h1>
-
-      <p style={STYLE_CONFIG["visualization-description"]}>
-        Explore how presidential appointments have shaped the Supreme Court over
-        time, from broad political patterns to individual justices' impact.
-        Scroll to uncover the evolving composition of the nation's highest
-        court.
-      </p>
+      <header className="pt-16 pb-12 space-y-4">
+        {" "}
+        {/* Increased top padding */}
+        <h1 className="text-4xl sm:text-3xl font-bold text-gray-900 tracking-tight text-center">
+          Shaping the Bench: Presidential Influence on the Supreme Court
+        </h1>
+        <p className="max-w-3xl mx-auto text-md sm:text-xl text-gray-600 text-center leading-relaxed">
+          Explore how presidential appointments have shaped the Supreme Court
+          over time, from broad political patterns to individual justices'
+          impact. Scroll to uncover the evolving composition of the nation's
+          highest court.
+        </p>
+      </header>
       <div className="relative" ref={containerRef}>
         <div className="sticky top-0 bg-white z-10 h-screen flex items-center justify-center">
           <div className="relative">
