@@ -32,9 +32,9 @@ const useDataLoader = () => {
     const loadData = async () => {
       try {
         const [justicesRes, presidentsRes, sizesRes] = await Promise.all([
-          fetch("/data/justices.csv"),
-          fetch("/data/presidents.csv"),
-          fetch("/data/scotus_size_changes.csv"),
+          fetch("./data/justices.csv"),
+          fetch("./data/presidents.csv"),
+          fetch("./data/scotus_size_changes.csv"),
         ]);
 
         const rawData = {
