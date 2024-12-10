@@ -32,15 +32,9 @@ const useDataLoader = () => {
     const loadData = async () => {
       try {
         const [justicesRes, presidentsRes, sizesRes] = await Promise.all([
-          fetch(
-            "https://msalexford.github.io/scotus-evolution/data/justices.csv"
-          ),
-          fetch(
-            "https://msalexford.github.io/scotus-evolution/data/presidents.csv"
-          ),
-          fetch(
-            "https://msalexford.github.io/scotus-evolution/data/scotus_size_changes.csv"
-          ),
+          fetch("/scotus-evolution/data/justices.csv"),
+          fetch("/scotus-evolution/data/presidents.csv"),
+          fetch("/scotus-evolution/data/scotus_size_changes.csv"),
         ]);
 
         const rawData = {
