@@ -1,11 +1,14 @@
 // ScrollySection.jsx
 
-// ScrollySection.jsx
+// #region - Imports
 
 import React from "react";
 import PropTypes from "prop-types";
 import { scrollySectionStyles as styles } from "./styles";
-import { SECTIONS, PRESIDENTIAL_VIEW_STEP, COURT_TIMELINE } from "./config";
+import { TIMELINE_DATA } from "./config";
+import { SECTIONS } from "./config";
+
+// #endregion
 
 const PRESIDENTIAL_STEPS = [
   {
@@ -49,19 +52,10 @@ const JUSTICE_STEPS = [
   },
 ];
 
-const ScrollySection = ({ step, currentSequence, updateAnnotations }) => {
+const ScrollySection = ({ step, currentSequence }) => {
   const section = SECTIONS.find((s) => s.id === step);
   const steps =
     step === 2 ? PRESIDENTIAL_STEPS : step === 3 ? JUSTICE_STEPS : null;
-
-  React.useEffect(() => {
-    if (steps && updateAnnotations) {
-      const currentStep = steps[currentSequence];
-      if (currentStep) {
-        updateAnnotations(currentStep.highlightYears);
-      }
-    }
-  }, [step, currentSequence, steps, updateAnnotations]);
 
   if (!section) return null;
 
@@ -91,7 +85,6 @@ const ScrollySection = ({ step, currentSequence, updateAnnotations }) => {
 ScrollySection.propTypes = {
   step: PropTypes.number.isRequired,
   currentSequence: PropTypes.number.isRequired,
-  updateAnnotations: PropTypes.func.isRequired,
 };
 
 export default ScrollySection;

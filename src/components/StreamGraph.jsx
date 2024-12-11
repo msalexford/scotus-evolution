@@ -10,12 +10,15 @@ import React, {
   useCallback,
 } from "react";
 import * as d3 from "d3";
-import { STYLE_CONFIG, ANNOTATIONS, COURT_TIMELINE } from "./config";
+import { STYLE_CONFIG, TIMELINE_DATA } from "./config";
 import _ from "lodash";
+import ViewTitle from "./ViewTitle";
+import UnifiedTimelineAnnotations from "./UnifiedTimelineAnnotations";
 
 // #endregion
 
-// Tooltip component for displaying hover information
+// #region - Tooltip Component
+
 const Tooltip = ({ data, position, width, height }) => {
   const tooltipRef = useRef(null);
   const tooltip = tooltipRef.current?.getBoundingClientRect();
@@ -29,17 +32,20 @@ const Tooltip = ({ data, position, width, height }) => {
     if (y - tooltip.height < 0) y = position.y + tooltip.height;
   }
 
+  const styles = STYLE_CONFIG.tooltip;
+
   return (
     <div
       ref={tooltipRef}
-      className="absolute bg-white px-3 py-2 rounded shadow-lg text-sm border border-gray-200"
+      className="absolute bg-white rounded shadow-lg text-sm border border-gray-200"
       style={{
         left: `${x}px`,
         top: `${y}px`,
         transform: "translate(-50%, -100%)",
-        zIndex: 9999,
-        maxWidth: "300px",
-        transition: "all 50ms ease-out",
+        padding: `${styles.container.padding.y} ${styles.container.padding.x}`,
+        maxWidth: styles.container.maxWidth,
+        transition: styles.container.transition,
+        zIndex: styles.container.zIndex,
         pointerEvents: "none",
       }}
     >
@@ -49,6 +55,10 @@ const Tooltip = ({ data, position, width, height }) => {
   );
 };
 
+// #endregion
+
+// #region - Streamgraph
+
 // Create streamgraph
 const StreamGraph = ({
   data,
@@ -57,13 +67,22 @@ const StreamGraph = ({
   margins,
   step,
   currentSequence,
-  clearTooltip,
+  modernAnnotationIndex,
 }) => {
+  // #region - Component State and Refs
+
   const svgRef = useRef(null);
+  const containerRef = useRef(null);
+  const cursorGroupRef = useRef(null);
+  const annotationsGroupRef = useRef(null);
+
   const [hoveredKey, setHoveredKey] = useState(null);
   const [tooltipData, setTooltipData] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const cursorGroupRef = useRef(null);
+
+  // #endregion
+
+  // #region - Scales and Layout
 
   const { x, y, area } = useMemo(() => {
     if (!data?.series) return {};
@@ -91,82 +110,39 @@ const StreamGraph = ({
     return { x, y, area };
   }, [data, width, height, margins]);
 
+  // #endregion
+
+  // #region - Event Handlers
+
+  // Mouse move handler - disabled for steps 1 and 2
   const handleMouseMove = useCallback(
     (event, d) => {
-      if (!x || !data) return;
+      if (!x || !data || !svgRef.current || step === 1 || step === 2) return;
 
       const [mouseX] = d3.pointer(event);
       const year = Math.round(x.invert(mouseX));
-      const bisect = d3.bisector((point) => point.data.year).left;
-      const yearIndex = bisect(d, year);
-
-      if (yearIndex < 0 || yearIndex >= d.length) return;
-
-      const yearData = d[yearIndex];
+      const yearData = d.find((point) => point.data.year === year);
       if (!yearData) return;
 
-      let displayName, displayValue;
+      const justiceCount = Math.round(Math.abs(yearData[1] - yearData[0]));
+      const legendItem = data.legendItems.find((item) => item.key === d.key);
+      const lastName = legendItem?.label.split(" ").pop() || d.key;
 
-      switch (step) {
-        case 1: {
-          const partyName = d.key.charAt(0).toUpperCase() + d.key.slice(1);
-          displayName = year.toString();
-          const value = yearData[1] - yearData[0];
-          const courtSize = yearData.data.total || 9;
-          const partyJustices = Math.round(Math.abs(value) * courtSize);
-          displayValue = `${partyJustices} out of ${courtSize} justices nominated by ${partyName} presidents`;
-          break;
-        }
-        case 2: {
-          const legendItem = data.legendItems.find(
-            (item) => item.key === d.key
-          );
-          const fullName = legendItem ? legendItem.label : d.key;
-          displayName = fullName;
-          const value = yearData[1] - yearData[0];
-          const justiceCount = Math.abs(value);
-          const lastName = fullName.split(" ").pop();
-          const clevelandNote =
-            lastName === "Cleveland"
-              ? " (Note: Shows combined appointees from two non-consecutive terms 1885-1889 and 1893-1897)"
-              : "";
-          displayValue =
-            justiceCount === 0
-              ? `In ${year}, no justices serving were appointed by President ${lastName}${clevelandNote}`
-              : `In ${year}, there were ${justiceCount} justice${
-                  justiceCount !== 1 ? "s" : ""
-                } serving appointed by President ${lastName}${clevelandNote}`;
-          break;
-        }
-        case 3: {
-          const justiceInfo = data.legendItems.find(
-            (item) => item.key === d.key
-          );
-          if (!justiceInfo) return;
-          displayName = justiceInfo.label;
-          const endYear = justiceInfo.endYear || "Present";
-          displayValue = `${justiceInfo.startYear}–${endYear}`;
-          break;
-        }
-      }
+      const tooltipContent = {
+        name: legendItem?.label || d.key,
+        value: `In ${year}, ${justiceCount} justice${
+          justiceCount !== 1 ? "s" : ""
+        } serving were appointed by President ${lastName}`,
+      };
 
-      const bounds = event.target.getBoundingClientRect();
       const containerBounds = svgRef.current.getBoundingClientRect();
-
-      setTooltipData({
-        name: displayName,
-        value: displayValue,
-      });
-
+      setTooltipData(tooltipContent);
       setTooltipPosition({
         x: event.clientX - containerBounds.left,
-        y: Math.min(
-          event.clientY - containerBounds.top,
-          bounds.top - containerBounds.top
-        ),
+        y: event.clientY - containerBounds.top,
       });
     },
-    [x, data, step]
+    [x, data, svgRef, step]
   );
 
   const debouncedHandleMouseMove = useMemo(
@@ -174,6 +150,11 @@ const StreamGraph = ({
     [handleMouseMove]
   );
 
+  // #endregion
+
+  // #region - Effects
+
+  // Clear tooltips effect
   useEffect(() => {
     const clearAllTooltips = () => {
       setHoveredKey(null);
@@ -183,26 +164,35 @@ const StreamGraph = ({
         paths.style("opacity", STYLE_CONFIG.stream.opacity);
       }
       if (cursorGroupRef.current) {
-        d3.select(cursorGroupRef.current).style("display", "none");
+        d3.select(cursorGroupRef.current)
+          .style("display", "none")
+          .selectAll("line")
+          .attr("x1", -999)
+          .attr("x2", -999);
       }
     };
 
     clearAllTooltips();
   }, [step]);
 
+  // Main visualization effect
+  // Main visualization effect
   useEffect(() => {
     if (!data?.series || !x || !y || !area) return;
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    // Create separate groups for different layers
+    // Create layers with correct z-indexing (base → streams → annotations → interaction)
     const baseGroup = svg.append("g").attr("class", "base-layer");
     const streamsGroup = svg.append("g").attr("class", "streams-layer");
     const annotationsGroup = svg.append("g").attr("class", "annotations-layer");
     const interactionGroup = svg.append("g").attr("class", "interaction-layer");
 
-    // Setup SVG structure with proper layering
+    // Store reference to annotations group for UnifiedTimelineAnnotations
+    annotationsGroupRef.current = annotationsGroup;
+
+    // Setup clip path
     const defs = baseGroup.append("defs");
     defs
       .append("clipPath")
@@ -213,7 +203,7 @@ const StreamGraph = ({
       .attr("width", width - margins.left - margins.right)
       .attr("height", height - margins.top - margins.bottom);
 
-    // Draw streams in the streams layer
+    // Refined streams with smoother transitions
     const paths = streamsGroup
       .attr("clip-path", "url(#clip)")
       .selectAll("path.stream")
@@ -223,130 +213,40 @@ const StreamGraph = ({
       .attr("d", area)
       .attr("fill", (d) => data.colors[d.key])
       .attr("stroke", STYLE_CONFIG.stream.stroke.color)
-      .attr(
-        "stroke-width",
-        step === 3
-          ? STYLE_CONFIG.stream.stroke.width.justice
-          : STYLE_CONFIG.stream.stroke.width.default
-      )
-      .attr("stroke-opacity", STYLE_CONFIG.stream.stroke.opacity)
-      .attr("stroke-linejoin", STYLE_CONFIG.stream.stroke.join)
-      .attr("stroke-linecap", STYLE_CONFIG.stream.stroke.cap)
-      .style("opacity", STYLE_CONFIG.stream.opacity);
+      .attr("stroke-width", step === 3 ? 1.5 : 1)
+      .attr("stroke-opacity", 0.7)
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-linecap", "round")
+      .style("opacity", STYLE_CONFIG.stream.opacity)
+      .style("transition", "opacity 200ms ease-out");
 
-    // Add highlights and annotations in the annotations layer
-    if (step === 1 && COURT_TIMELINE[currentSequence]) {
-      const currentEra = COURT_TIMELINE[currentSequence];
-      if (currentEra?.period) {
-        const [start, end] = currentEra.period;
-
-        // Add white background for annotation lines first
-        COURT_TIMELINE.forEach((era) => {
-          if (!era.period) return;
-          const [eraStart] = era.period;
-
-          // Line
-          annotationsGroup
-            .append("line")
-            .attr("class", "era-line")
-            .attr("x1", x(eraStart))
-            .attr("x2", x(eraStart))
-            .attr("y1", margins.top)
-            .attr("y2", height - margins.bottom)
-            .attr("stroke", "#000000") // Changed from black to gray
-            .attr("stroke-width", 1) // Reduced from 2
-            .attr("stroke-dasharray", "5,3") // Smaller dash pattern
-            .attr("opacity", era === currentEra ? 0.8 : 0.4); // Reduced opacity
-        });
-
-        // Add annotations with enhanced visibility
-        const relevantAnnotations =
-          ANNOTATIONS[step]?.filter(
-            (anno) => anno.year >= start && anno.year <= end
-          ) || [];
-
-        relevantAnnotations.forEach((annotation) => {
-          const annotationGroup = annotationsGroup
-            .append("g")
-            .attr("class", "annotation")
-            .attr("transform", `translate(${x(annotation.year)},0)`);
-
-          // White background line
-          annotationGroup
-            .append("line")
-            .attr("y1", margins.top)
-            .attr("y2", height - margins.bottom)
-            .attr("stroke", "#ffffff")
-            .attr("stroke-width", 6)
-            .attr("opacity", 0.5);
-
-          // Black foreground line
-          annotationGroup
-            .append("line")
-            .attr("y1", margins.top)
-            .attr("y2", height - margins.bottom)
-            .attr("stroke", "#000000")
-            .attr("stroke-width", 1.5)
-            .attr("stroke-dasharray", "5,3")
-            .attr("opacity", 1);
-
-          // Text with background
-          const addText = (text, yPos, fontSize, isBold = false) => {
-            // White text background
-            annotationGroup
-              .append("text")
-              .attr("y", yPos)
-              .attr("text-anchor", "middle")
-              .attr("font-size", fontSize)
-              .attr("stroke", "#ffffff")
-              .attr("stroke-width", 4)
-              .attr("stroke-linejoin", "round")
-              .attr("stroke-linecap", "round")
-              .text(text);
-
-            // Main text
-            annotationGroup
-              .append("text")
-              .attr("y", yPos)
-              .attr("text-anchor", "middle")
-              .attr("font-size", fontSize)
-              .attr("font-weight", isBold ? "bold" : "normal")
-              .attr("fill", "#000000")
-              .text(text);
-          };
-
-          addText(annotation.label, margins.top - 12, "13px", true);
-          if (annotation.description) {
-            addText(annotation.description, margins.top - 28, "11px");
-          }
-        });
-      }
-    }
-
-    // Add cursor group for hover effects
-    const cursorGroup = svg
+    // Add cursor group for hover interactions (only for step 3)
+    const cursorGroup = interactionGroup
       .append("g")
       .attr("class", "cursor")
-      .style("display", "none");
+      .style("display", "none")
+      .attr("pointer-events", "none");
 
     cursorGroupRef.current = cursorGroup.node();
 
+    // Add vertical cursor line
     cursorGroup
       .append("line")
       .attr("y1", margins.top)
       .attr("y2", height - margins.bottom)
-      .attr("stroke", "#666")
-      .attr("stroke-width", 1)
-      .attr("stroke-dasharray", "4,4");
+      .attr("stroke", STYLE_CONFIG.cursor.line.stroke)
+      .attr("stroke-width", STYLE_CONFIG.cursor.line.strokeWidth)
+      .attr("stroke-dasharray", STYLE_CONFIG.cursor.line.strokeDasharray);
 
+    // Add year label for cursor
     cursorGroup
       .append("text")
       .attr("y", margins.top - 10)
-      .attr("text-anchor", "middle")
-      .attr("font-size", "12px")
-      .attr("fill", "#666");
+      .attr("text-anchor", STYLE_CONFIG.cursor.label.anchor)
+      .attr("font-size", STYLE_CONFIG.cursor.label.fontSize)
+      .attr("fill", STYLE_CONFIG.cursor.label.fill);
 
-    // Add interaction layer on top
+    // Add interaction layer for hover effects
     interactionGroup
       .attr("clip-path", "url(#clip)")
       .selectAll("path.hover-layer")
@@ -355,41 +255,84 @@ const StreamGraph = ({
       .attr("class", "hover-layer")
       .attr("d", area)
       .attr("fill", "transparent")
-      .style("pointer-events", step === 1 ? "none" : "all")
-      .style("cursor", step === 1 ? "default" : "pointer")
+      .style("pointer-events", step === 1 || step === 2 ? "none" : "all")
+      .style("cursor", step === 1 || step === 2 ? "default" : "pointer")
       .on("mouseenter", (event, d) => {
-        if (step === 1) return;
+        if (step === 1 || step === 2) return;
         setHoveredKey(d.key);
-        paths.style("opacity", (p) => (p.key === d.key ? 1 : 0.2));
-        handleMouseMove(event, d);
+        paths.style("opacity", (p) =>
+          p.key === d.key
+            ? STYLE_CONFIG.cursor.interaction.activeOpacity
+            : STYLE_CONFIG.cursor.interaction.inactiveOpacity
+        );
         cursorGroup.style("display", null);
       })
       .on("mousemove", (event, d) => {
-        if (step === 1) return;
-        debouncedHandleMouseMove(event, d);
+        if (step === 1 || step === 2) return;
         const [mouseX] = d3.pointer(event);
+        const year = Math.round(x.invert(mouseX));
+
+        // Update cursor line position
         cursorGroup.select("line").attr("x1", mouseX).attr("x2", mouseX);
-        cursorGroup
-          .select("text")
-          .attr("x", mouseX)
-          .text(Math.round(x.invert(mouseX)));
+
+        // Update year label
+        cursorGroup.select("text").attr("x", mouseX).text(year);
+
+        // Find data for current year and update tooltip
+        const yearData = d.find((point) => point.data.year === year);
+        if (yearData) {
+          const justiceCount = Math.round(Math.abs(yearData[1] - yearData[0]));
+          const legendItem = data.legendItems.find(
+            (item) => item.key === d.key
+          );
+          const lastName = legendItem?.label.split(" ").pop() || d.key;
+
+          const tooltipContent = {
+            name: legendItem?.label || d.key,
+            value: `In ${year}, ${justiceCount} justice${
+              justiceCount !== 1 ? "s" : ""
+            } serving were appointed by President ${lastName}`,
+          };
+
+          const containerBounds = svgRef.current.getBoundingClientRect();
+          setTooltipData(tooltipContent);
+          setTooltipPosition({
+            x: event.clientX - containerBounds.left,
+            y: event.clientY - containerBounds.top,
+          });
+        }
       })
       .on("mouseleave", () => {
-        if (step === 1) return;
+        if (step === 1 || step === 2) return;
         setHoveredKey(null);
         setTooltipData(null);
         paths.style("opacity", STYLE_CONFIG.stream.opacity);
         cursorGroup.style("display", "none");
       });
 
-    // Add x-axis at the bottom
-    baseGroup
+    // Add x-axis with refined styling
+    const xAxis = baseGroup
       .append("g")
       .attr("class", "x-axis")
-      .attr("transform", `translate(0,${height - margins.bottom})`)
-      // ... previous code ...
+      .attr("transform", `translate(0,${height - margins.bottom})`);
 
-      .call(d3.axisBottom(x).ticks(12).tickFormat(d3.format("d")));
+    // Customize axis appearance
+    xAxis.call(d3.axisBottom(x).ticks(12).tickFormat(d3.format("d")));
+
+    // Refine axis styling
+    xAxis.select(".domain").attr("stroke", "#666").attr("stroke-width", 1);
+
+    xAxis
+      .selectAll(".tick line")
+      .attr("stroke", "#666")
+      .attr("stroke-width", 1)
+      .attr("opacity", 0.5);
+
+    xAxis
+      .selectAll(".tick text")
+      .attr("fill", "#666")
+      .attr("font-size", "12px")
+      .attr("font-weight", "400");
   }, [
     data,
     width,
@@ -399,22 +342,34 @@ const StreamGraph = ({
     x,
     y,
     area,
-    currentSequence,
-    debouncedHandleMouseMove,
-    handleMouseMove,
+    setHoveredKey,
+    setTooltipData,
   ]);
+  // #endregion
+
+  // #region - Render
 
   return (
     <div className="relative w-full">
-      {/* Main SVG container */}
       <svg
         ref={svgRef}
         width={width}
         height={height}
         className="streamgraph-container"
       />
-
-      {/* Render tooltip when tooltip data exists */}
+      {annotationsGroupRef.current && (
+        <UnifiedTimelineAnnotations
+          step={step}
+          currentSequence={currentSequence}
+          width={width}
+          height={height}
+          margins={margins}
+          x={x}
+          mainGroup={annotationsGroupRef.current} // Use the ref instead of undefined mainGroup
+          modernAnnotationIndex={modernAnnotationIndex} // Pass through the prop directly
+        />
+      )}
+      <ViewTitle step={step} margins={margins} />
       {tooltipData && (
         <Tooltip
           data={tooltipData}
@@ -423,20 +378,12 @@ const StreamGraph = ({
           height={height}
         />
       )}
-
-      {/* Information overlay for step 1 */}
-      {step === 1 && COURT_TIMELINE[currentSequence] && (
-        <div className="absolute left-0 right-0 bottom-0 p-4 bg-white bg-opacity-90">
-          <p className="text-lg font-bold">
-            {COURT_TIMELINE[currentSequence].name}
-          </p>
-          <p className="text-gray-700">
-            {COURT_TIMELINE[currentSequence].description}
-          </p>
-        </div>
-      )}
     </div>
   );
+
+  // #endregion
 };
+
+// #endregion
 
 export default StreamGraph;

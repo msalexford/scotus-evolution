@@ -84,9 +84,6 @@ const validateJustice = (justice) => {
 
 /**
  * Get the party affiliation of a justice
- * @param {Object} justice - The justice object
- * @param {Object} data - The data object containing presidents
- * @returns {string} The party affiliation of the justice
  */
 const getPartyAffiliation = (justice, data) => {
   const president = data.presidents.find(
@@ -245,6 +242,8 @@ export const processPresidentData = (data, d3) => {
       key: president.president,
       label: president["president-full-name"],
       color: presidentColors[president.president],
+      startYear: new Date(president["presidency-start"]).getFullYear(),
+      endYear: new Date(president["presidency-end"]).getFullYear(),
     })),
   };
 };

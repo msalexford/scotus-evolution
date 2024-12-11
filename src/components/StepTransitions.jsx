@@ -1,8 +1,13 @@
 // StepTransitions.jsx
 
+// #region - Imports
+
 import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
-import { COURT_TIMELINE, ANNOTATIONS } from "./config";
+import { TIMELINE_DATA } from "./config";
+import { STYLE_CONFIG } from "./config";
+
+// #endregion
 
 const StepTransitions = ({
   step,
@@ -19,30 +24,21 @@ const StepTransitions = ({
     // Clear existing highlights
     mainGroup.selectAll(".highlight-region, .era-line, .annotation").remove();
 
-    // Get current era data
-    const currentEra = COURT_TIMELINE[currentSequence];
+    // Get timeline data based on step
+    const timeline =
+      step === 1 ? TIMELINE_DATA.court : TIMELINE_DATA.presidential;
+    const currentEra = timeline.eras[currentSequence];
     if (!currentEra?.period) return;
 
     const [start, end] = currentEra.period;
 
-    // Add era boundaries with significantly enhanced visibility
-    COURT_TIMELINE.forEach((era) => {
+    // Add era boundaries
+    timeline.eras.forEach((era) => {
       if (!era.period) return;
       const [eraStart] = era.period;
+      const isCurrentEra = era === currentEra;
 
-      // Enhanced line styles with much higher contrast
-      const lineOpacity =
-        step === 1
-          ? era === currentEra
-            ? 1
-            : 0.85 // Further increased opacity
-          : step === 2
-          ? era.step === currentSequence
-            ? 1
-            : 0.8
-          : 0.8;
-
-      // Add white background line first
+      // Add white background line
       mainGroup
         .append("line")
         .attr("class", "era-line-bg")
@@ -50,10 +46,11 @@ const StepTransitions = ({
         .attr("x2", x(eraStart))
         .attr("y1", margins.top)
         .attr("y2", height - margins.bottom)
-        .attr("stroke", "#ffffff")
-        .attr("stroke-width", 6) // Much thicker white background
-        .attr("opacity", 0.9);
+        .attr("stroke", STYLE_CONFIG.eraLines.background.stroke)
+        .attr("stroke-width", STYLE_CONFIG.eraLines.background.strokeWidth)
+        .attr("opacity", STYLE_CONFIG.eraLines.background.opacity);
 
+      // Add era line
       mainGroup
         .append("line")
         .attr("class", "era-line")
@@ -61,107 +58,93 @@ const StepTransitions = ({
         .attr("x2", x(eraStart))
         .attr("y1", margins.top)
         .attr("y2", height - margins.bottom)
-        .attr("stroke", "#000000") // Changed to black for maximum contrast
-        .attr("stroke-width", 2)
-        .attr("stroke-dasharray", "8,4") // Adjusted dash pattern
-        .attr("opacity", lineOpacity)
-        .attr("filter", "drop-shadow(2px 2px 2px rgba(0,0,0,0.3))");
-
-      // Add era labels for step 2 with enhanced visibility
-      if (step === 2 && era.step === currentSequence) {
-        // Add text background for better readability
-        mainGroup
-          .append("text")
-          .attr("class", "era-label-bg")
-          .attr("x", x(eraStart + (era.period[1] - eraStart) / 2))
-          .attr("y", margins.top - 15)
-          .attr("text-anchor", "middle")
-          .attr("font-size", "16px")
-          .attr("stroke", "#ffffff")
-          .attr("stroke-width", 6)
-          .attr("stroke-linejoin", "round")
-          .attr("stroke-linecap", "round")
-          .text(era.name);
-
-        mainGroup
-          .append("text")
-          .attr("class", "era-label")
-          .attr("x", x(eraStart + (era.period[1] - eraStart) / 2))
-          .attr("y", margins.top - 15)
-          .attr("text-anchor", "middle")
-          .attr("font-size", "16px")
-          .attr("font-weight", "bold")
-          .attr("fill", "#000000") // Changed to black
-          .text(era.name);
-      }
+        .attr(
+          "stroke",
+          isCurrentEra
+            ? STYLE_CONFIG.eraLines.highlighted.stroke
+            : STYLE_CONFIG.eraLines.standard.stroke
+        )
+        .attr(
+          "stroke-width",
+          isCurrentEra
+            ? STYLE_CONFIG.eraLines.highlighted.strokeWidth
+            : STYLE_CONFIG.eraLines.standard.strokeWidth
+        )
+        .attr(
+          "stroke-dasharray",
+          isCurrentEra
+            ? STYLE_CONFIG.eraLines.highlighted.strokeDasharray
+            : STYLE_CONFIG.eraLines.standard.strokeDasharray
+        )
+        .attr(
+          "opacity",
+          isCurrentEra
+            ? STYLE_CONFIG.eraLines.highlighted.opacity
+            : STYLE_CONFIG.eraLines.standard.opacity
+        );
     });
 
-    // Add annotations with significantly enhanced visibility
-    const relevantAnnotations = ANNOTATIONS[step] || [];
-    relevantAnnotations
-      .filter((annotation) => {
-        if (step === 1) {
-          return annotation.year >= start && annotation.year <= end;
-        }
-        return true;
-      })
-      .forEach((annotation) => {
-        const annotationGroup = mainGroup
-          .append("g")
-          .attr("class", "annotation")
-          .attr("transform", `translate(${x(annotation.year)},0)`);
+    // Add annotations from the current era
+    currentEra.annotations.forEach((annotation) => {
+      const annotationGroup = mainGroup
+        .append("g")
+        .attr("class", "annotation")
+        .attr("transform", `translate(${x(annotation.year)},0)`);
 
-        // Add thick white background line
+      // Add thick white background line
+      annotationGroup
+        .append("line")
+        .attr("y1", margins.top)
+        .attr("y2", height - margins.bottom)
+        .attr("stroke", STYLE_CONFIG.eraLines.background.stroke)
+        .attr("stroke-width", STYLE_CONFIG.eraLines.background.strokeWidth)
+        .attr("opacity", STYLE_CONFIG.eraLines.background.opacity);
+
+      // Add main annotation line
+      annotationGroup
+        .append("line")
+        .attr("y1", margins.top)
+        .attr("y2", height - margins.bottom)
+        .attr("stroke", STYLE_CONFIG.eraLines.highlighted.stroke)
+        .attr("stroke-width", STYLE_CONFIG.eraLines.highlighted.strokeWidth)
+        .attr(
+          "stroke-dasharray",
+          STYLE_CONFIG.eraLines.highlighted.strokeDasharray
+        )
+        .attr("opacity", STYLE_CONFIG.eraLines.highlighted.opacity);
+
+      // Add text with background
+      ["label", "description"].forEach((textType) => {
+        if (textType === "description" && !annotation.description) return;
+
+        const y = textType === "label" ? margins.top - 12 : margins.top - 28;
+        const text =
+          textType === "label" ? annotation.label : annotation.description;
+        const textStyles = STYLE_CONFIG.annotationText[textType];
+
+        // White background for text
         annotationGroup
-          .append("line")
-          .attr("y1", margins.top)
-          .attr("y2", height - margins.bottom)
-          .attr("stroke", "#ffffff")
-          .attr("stroke-width", 6)
-          .attr("opacity", 0.9);
+          .append("text")
+          .attr("y", y)
+          .attr("text-anchor", textStyles.anchor)
+          .attr("font-size", textStyles.fontSize)
+          .attr("stroke", STYLE_CONFIG.eraLines.background.stroke)
+          .attr("stroke-width", 4)
+          .attr("stroke-linejoin", "round")
+          .attr("stroke-linecap", "round")
+          .text(text);
 
-        // Add main annotation line with maximum contrast
+        // Main text
         annotationGroup
-          .append("line")
-          .attr("y1", margins.top)
-          .attr("y2", height - margins.bottom)
-          .attr("stroke", "#000000") // Changed to black
-          .attr("stroke-width", 2)
-          .attr("stroke-dasharray", "8,4")
-          .attr("opacity", 1);
-
-        // Add text background for better readability
-        ["label", "description"].forEach((textType) => {
-          if (textType === "description" && !annotation.description) return;
-
-          const y = textType === "label" ? margins.top - 12 : margins.top - 28;
-          const text =
-            textType === "label" ? annotation.label : annotation.description;
-          const fontSize = textType === "label" ? "13px" : "11px";
-
-          // White background for text
-          annotationGroup
-            .append("text")
-            .attr("y", y)
-            .attr("text-anchor", "middle")
-            .attr("font-size", fontSize)
-            .attr("stroke", "#ffffff")
-            .attr("stroke-width", 4)
-            .attr("stroke-linejoin", "round")
-            .attr("stroke-linecap", "round")
-            .text(text);
-
-          // Main text
-          annotationGroup
-            .append("text")
-            .attr("y", y)
-            .attr("text-anchor", "middle")
-            .attr("font-size", fontSize)
-            .attr("font-weight", textType === "label" ? "bold" : "normal")
-            .attr("fill", "#000000") // Changed to black
-            .text(text);
-        });
+          .append("text")
+          .attr("y", y)
+          .attr("text-anchor", textStyles.anchor)
+          .attr("font-size", textStyles.fontSize)
+          .attr("font-weight", textStyles.fontWeight)
+          .attr("fill", textStyles.fill)
+          .text(text);
       });
+    });
   }, [step, currentSequence, width, height, margins, x, mainGroup]);
 
   return null;
