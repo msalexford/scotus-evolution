@@ -1,3 +1,4 @@
+// SupremeCourtTimeline.jsx
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Papa from "papaparse";
 import * as d3 from "d3";
@@ -66,7 +67,7 @@ const useProcessedData = (data, step) => {
 const SupremeCourtTimeline = () => {
   // State declarations
   const [currentStep, setCurrentStep] = useState(1);
-  const [currentSequence, setCurrentSequence] = useState(-1); // Start with no annotations
+  const [currentSequence, setCurrentSequence] = useState(-1);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const containerRef = useRef(null);
   const observerRefs = useRef([]);
@@ -78,36 +79,30 @@ const SupremeCourtTimeline = () => {
     getVisualizationStep(currentStep)
   );
 
-  // Helper function to determine which visualization to show (1 or 2)
+  // Helper function to determine which visualization to show
   function getVisualizationStep(step) {
-    // Modify step ranges to include step 3
     if (step >= 1 && step <= 5) {
-      return 1; // First visualization (party view)
-    } else if (step >= 6 && step <= 10) {
-      return 2; // Second visualization (presidential eras)
-    } else if (step >= 11 && step <= 13) {
-      return 3; // Third visualization (individual justices)
+      return 1; // Party view
+    } else if (step >= 6 && step <= 8) {
+      // Changed from step <= 10 to step <= 8
+      return 2; // Presidential legacies view (now just 3 steps)
+    } else if (step >= 9 && step <= 13) {
+      return 3; // Individual justices
     }
-    return 1; // Default to first visualization
+    return 1;
   }
 
-  // Update the getAnnotationSequence function
+  // Get annotation sequence for current step
   function getAnnotationSequence(step) {
+    // Party view sequences (steps 1-5)
     if (step >= 1 && step <= 5) {
-      return step - 1; // First viz annotations (0-4)
-    } else if (step >= 6 && step <= 10) {
-      return step - 6; // Pre-modern era annotations (0-4)
-    } else if (step >= 11 && step <= 13) {
-      return -1; // No annotations for justice view
+      return step - 1; // Returns 0-4 for party view annotations
     }
-    return -1;
-  }
-
-  // Update the getModernAnnotationIndex function
-  function getModernAnnotationIndex(step) {
-    if (step >= 11 && step <= 13) {
-      return -1; // No modern annotations in justice view
+    // Presidential legacy sequences (steps 6-8)
+    else if (step >= 6 && step <= 8) {
+      return step - 6; // Returns 0-2 for our three presidential legacies
     }
+    // No annotations for other steps
     return -1;
   }
 
@@ -135,18 +130,6 @@ const SupremeCourtTimeline = () => {
 
     return () => observer.disconnect();
   }, []);
-
-  // Additional logic
-  useEffect(() => {
-    if (currentStep >= 11 && currentStep <= 13) {
-      console.log("Modern era step:", {
-        step: currentStep,
-        vizStep: getVisualizationStep(currentStep),
-        sequence: getAnnotationSequence(currentStep),
-        modernIndex: getModernAnnotationIndex(currentStep),
-      });
-    }
-  }, [currentStep]);
 
   // Tooltip clearing logic
   const clearTooltip = useCallback(() => {
@@ -208,7 +191,6 @@ const SupremeCourtTimeline = () => {
                 margins={DIMENSIONS.margins}
                 step={getVisualizationStep(currentStep)}
                 currentSequence={getAnnotationSequence(currentStep)}
-                modernAnnotationIndex={getModernAnnotationIndex(currentStep)} // Add this prop
               />
             )}
           </div>
@@ -230,7 +212,6 @@ const SupremeCourtTimeline = () => {
                   step={index + 1}
                   currentStep={currentStep}
                   currentSequence={getAnnotationSequence(index + 1)}
-                  modernAnnotationIndex={getModernAnnotationIndex(index + 1)}
                 />
               </div>
             ))}

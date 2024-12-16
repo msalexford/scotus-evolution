@@ -10,130 +10,33 @@ const UnifiedTimelineAnnotations = ({
   margins,
   x,
   mainGroup,
-  modernAnnotationIndex = -1,
 }) => {
-  console.log("UnifiedTimelineAnnotations render:", {
-    step,
-    currentSequence,
-    modernAnnotationIndex,
-    hasMainGroup: !!mainGroup,
-    hasXScale: !!x,
-  });
-
   React.useEffect(() => {
     if (!mainGroup || !x) return;
 
-    // Clear all existing annotations when entering step 3
-    if (step === 3) {
+    // Clear existing annotations
+    const clearAnnotations = () => {
       mainGroup.selectAll(".annotation").remove();
       mainGroup.selectAll(".annotation-text").remove();
-      mainGroup.selectAll(".annotation-line").remove();
-      mainGroup.selectAll(".era-highlight").remove();
-      mainGroup.selectAll(".boundary-line").remove();
-      return;
-    }
+      mainGroup.selectAll(".legacy-highlight").remove();
+    };
 
-    const timeline =
-      step === 1 ? TIMELINE_DATA.court : TIMELINE_DATA.presidential;
-    const currentEra = timeline.eras[currentSequence];
+    clearAnnotations();
 
-    if (!currentEra) return;
+    // Handle party view (step 1)
+    if (step === 1 && TIMELINE_DATA.court?.eras?.[currentSequence]) {
+      const currentEra = TIMELINE_DATA.court.eras[currentSequence];
 
-    if (step === 1) {
-      // Clear only existing annotations for step 1
-      mainGroup.selectAll(".annotation").remove();
-
-      // Party view - single year annotations
-      if (currentEra.annotations && currentEra.annotations.length > 0) {
-        currentEra.annotations.forEach((annotation) => {
-          const annotationGroup = mainGroup
-            .append("g")
-            .attr("class", "annotation")
-            .attr("transform", `translate(${x(annotation.year)},0)`);
-
-          // Add vertical line
-          annotationGroup
-            .append("line")
-            .attr("y1", margins.top)
-            .attr("y2", height - margins.bottom)
-            .attr("stroke", "black")
-            .attr("stroke-width", "1.5")
-            .attr("opacity", 0.8);
-
-          // Add label group
-          const labelGroup = annotationGroup
-            .append("g")
-            .attr("transform", `translate(0,${margins.top - 40})`);
-
-          // Background
-          labelGroup
-            .append("rect")
-            .attr("x", -100)
-            .attr("y", -20)
-            .attr("width", 200)
-            .attr("height", 45)
-            .attr("fill", "white")
-            .attr("opacity", 0.9);
-
-          // Label
-          labelGroup
-            .append("text")
-            .attr("text-anchor", "middle")
-            .attr("dy", "0")
-            .attr("font-size", "14px")
-            .attr("font-weight", "bold")
-            .text(annotation.label);
-
-          // Description
-          labelGroup
-            .append("text")
-            .attr("text-anchor", "middle")
-            .attr("dy", "20")
-            .attr("font-size", "12px")
-            .text(annotation.description);
-        });
-      }
-    } else if (step === 2) {
-      // Clear everything for step 2
-      mainGroup.selectAll(".annotation-text").remove();
-      mainGroup.selectAll(".annotation-line").remove();
-      mainGroup.selectAll(".era-highlight").remove();
-      mainGroup.selectAll(".boundary-line").remove();
-
-      const [startYear, endYear] = currentEra.period;
-
-      // Create highlight for current era
-      const highlightGroup = mainGroup
-        .append("g")
-        .attr("class", "era-highlight");
-
-      // Add semi-transparent overlays
-      highlightGroup
-        .append("rect")
-        .attr("x", margins.left)
-        .attr("y", margins.top)
-        .attr("width", x(startYear) - margins.left)
-        .attr("height", height - margins.top - margins.bottom)
-        .attr("fill", "white")
-        .attr("opacity", 0.5);
-
-      highlightGroup
-        .append("rect")
-        .attr("x", x(endYear))
-        .attr("y", margins.top)
-        .attr("width", width - x(endYear) - margins.right)
-        .attr("height", height - margins.top - margins.bottom)
-        .attr("fill", "white")
-        .attr("opacity", 0.5);
-
-      // Add boundary lines
-      [startYear, endYear].forEach((year) => {
-        const lineGroup = mainGroup
+      // Process each annotation for the current era
+      currentEra.annotations?.forEach((annotation) => {
+        // Create annotation group
+        const annotationGroup = mainGroup
           .append("g")
-          .attr("class", "boundary-line")
-          .attr("transform", `translate(${x(year)},0)`);
+          .attr("class", "annotation")
+          .attr("transform", `translate(${x(annotation.year)},0)`);
 
-        lineGroup
+        // Add background line (white backdrop for visibility)
+        annotationGroup
           .append("line")
           .attr("y1", margins.top)
           .attr("y2", height - margins.bottom)
@@ -141,7 +44,8 @@ const UnifiedTimelineAnnotations = ({
           .attr("stroke-width", STYLE_CONFIG.eraLines.background.strokeWidth)
           .attr("opacity", STYLE_CONFIG.eraLines.background.opacity);
 
-        lineGroup
+        // Add main vertical line
+        annotationGroup
           .append("line")
           .attr("y1", margins.top)
           .attr("y2", height - margins.bottom)
@@ -152,106 +56,133 @@ const UnifiedTimelineAnnotations = ({
             STYLE_CONFIG.eraLines.highlighted.strokeDasharray
           )
           .attr("opacity", STYLE_CONFIG.eraLines.highlighted.opacity);
-      });
 
-      const isModernEra = currentEra.id === "modern-politics";
-
-      if (
-        isModernEra &&
-        modernAnnotationIndex >= 0 &&
-        currentEra?.annotations
-      ) {
-        const currentAnnotation = currentEra.annotations[modernAnnotationIndex];
-
-        const annotationGroup = mainGroup
-          .append("g")
-          .attr("class", "annotation-text")
-          .attr("transform", `translate(${x(currentAnnotation.year)},0)`);
-
-        // Add line
-        annotationGroup
-          .append("line")
-          .attr("class", "annotation-line")
-          .attr("y1", margins.top)
-          .attr("y2", height - margins.bottom)
-          .attr("stroke", "black")
-          .attr("stroke-width", "2")
-          .attr("opacity", 0.8);
-
-        // Add label group
+        // Add text background for better readability
         const labelGroup = annotationGroup
           .append("g")
+          .attr("class", "label-group")
           .attr("transform", `translate(0,${margins.top - 40})`);
 
-        // Background
-        labelGroup
-          .append("rect")
-          .attr("x", -100)
-          .attr("y", -20)
-          .attr("width", 200)
-          .attr("height", 45)
-          .attr("fill", "white")
-          .attr("opacity", 0.9);
-
-        // Label
+        // Add label
         labelGroup
           .append("text")
+          .attr("class", "annotation-label")
           .attr("text-anchor", "middle")
-          .attr("dy", "0")
-          .attr("font-size", "14px")
-          .attr("font-weight", "bold")
-          .text(currentAnnotation.label);
+          .attr("font-size", STYLE_CONFIG.annotations.text.label.fontSize)
+          .attr("font-weight", STYLE_CONFIG.annotations.text.label.fontWeight)
+          .attr("fill", STYLE_CONFIG.annotations.text.label.fill)
+          .attr("y", 0)
+          .text(annotation.label);
 
-        // Description
+        // Add description
         labelGroup
           .append("text")
+          .attr("class", "annotation-description")
           .attr("text-anchor", "middle")
-          .attr("dy", "20")
-          .attr("font-size", "12px")
-          .text(currentAnnotation.description);
-      } else if (!isModernEra) {
-        // Non-modern era title and description
-        const annotationGroup = mainGroup
-          .append("g")
-          .attr("class", "annotation-text")
+          .attr("font-size", STYLE_CONFIG.annotations.text.description.fontSize)
           .attr(
-            "transform",
-            `translate(${x(startYear + (endYear - startYear) / 2)},0)`
-          );
-
-        const textConfig = STYLE_CONFIG.annotations.text;
-
-        // Title
-        annotationGroup
-          .append("text")
-          .attr("y", margins.top + textConfig.label.y)
-          .attr("text-anchor", "middle")
-          .attr("font-size", textConfig.label.fontSize)
-          .attr("fill", textConfig.label.fill)
-          .attr("font-weight", textConfig.label.fontWeight)
-          .text(currentEra.name);
-
-        // Description
-        annotationGroup
-          .append("text")
-          .attr("y", margins.top + textConfig.description.y)
-          .attr("text-anchor", "middle")
-          .attr("font-size", textConfig.description.fontSize)
-          .attr("fill", textConfig.description.fill)
-          .attr("font-weight", textConfig.description.fontWeight)
-          .text(currentEra.description);
-      }
+            "font-weight",
+            STYLE_CONFIG.annotations.text.description.fontWeight
+          )
+          .attr("fill", STYLE_CONFIG.annotations.text.description.fill)
+          .attr("y", 20)
+          .text(annotation.description);
+      });
     }
-  }, [
-    step,
-    currentSequence,
-    width,
-    height,
-    margins,
-    x,
-    mainGroup,
-    modernAnnotationIndex,
-  ]);
+
+    // Handle presidential legacies (step 2)
+    else if (step === 2 && currentSequence >= 0) {
+      const legacy = TIMELINE_DATA.presidential.legacies?.[currentSequence];
+      if (!legacy) return;
+
+      const [startYear, endYear] = legacy.period || [];
+      if (!startYear || !endYear) return;
+
+      // Add subtle period indicator
+      mainGroup
+        .append("rect")
+        .attr("class", "legacy-background")
+        .attr("x", x(startYear))
+        .attr("y", margins.top)
+        .attr("width", x(endYear) - x(startYear))
+        .attr("height", height - margins.top - margins.bottom)
+        .attr("fill", "#f8f9fa")
+        .attr("opacity", 0.15);
+
+      // Add period boundary lines
+      [startYear, endYear].forEach((year) => {
+        mainGroup
+          .append("line")
+          .attr("class", "period-boundary")
+          .attr("x1", x(year))
+          .attr("x2", x(year))
+          .attr("y1", margins.top)
+          .attr("y2", height - margins.bottom)
+          .attr("stroke", STYLE_CONFIG.annotations.line.standard.stroke)
+          .attr("stroke-width", 1)
+          .attr("stroke-dasharray", "4,4")
+          .attr("opacity", 0.4);
+      });
+
+      // Add title group
+      const titleGroup = mainGroup
+        .append("g")
+        .attr("class", "annotation-text")
+        .attr(
+          "transform",
+          `translate(${x(startYear + (endYear - startYear) / 2)},${
+            margins.top - 40
+          })`
+        );
+
+      // Add title text
+      titleGroup
+        .append("text")
+        .attr("text-anchor", "middle")
+        .attr("font-size", STYLE_CONFIG.annotations.text.label.fontSize)
+        .attr("font-weight", STYLE_CONFIG.annotations.text.label.fontWeight)
+        .attr("fill", STYLE_CONFIG.annotations.text.label.fill)
+        .attr("dy", "-8")
+        .text(legacy.name);
+
+      // Add description text
+      titleGroup
+        .append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "20")
+        .attr("font-size", STYLE_CONFIG.annotations.text.description.fontSize)
+        .attr(
+          "font-weight",
+          STYLE_CONFIG.annotations.text.description.fontWeight
+        )
+        .attr("fill", STYLE_CONFIG.annotations.text.description.fill)
+        .text(legacy.description);
+
+      // Add period text
+      titleGroup
+        .append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "35")
+        .attr("font-size", "12px")
+        .attr("fill", "#666")
+        .text(`${startYear}–${endYear}`);
+
+      // Add drop shadow filter
+      const defs = mainGroup.append("defs");
+      defs
+        .append("filter")
+        .attr("id", "shadow")
+        .attr("x", "-20%")
+        .attr("y", "-20%")
+        .attr("width", "140%")
+        .attr("height", "140%")
+        .append("feDropShadow")
+        .attr("dx", "0")
+        .attr("dy", "2")
+        .attr("stdDeviation", "3")
+        .attr("flood-color", "rgba(0,0,0,0.1)");
+    }
+  }, [step, currentSequence, width, height, margins, x, mainGroup]);
 
   return null;
 };

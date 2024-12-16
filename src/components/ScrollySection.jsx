@@ -5,8 +5,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { scrollySectionStyles as styles } from "./styles";
-import { TIMELINE_DATA } from "./config";
-import { SECTIONS } from "./config";
+import { TIMELINE_DATA, SECTIONS } from "./config";
 
 // #endregion
 
@@ -60,24 +59,26 @@ const ScrollySection = ({ step, currentSequence }) => {
   if (!section) return null;
 
   return (
-    <div className={styles.section}>
-      <h2>{section.title}</h2>
-      <p>{section.description}</p>
-      {steps && (
-        <div className={styles.progressiveSteps}>
-          {steps.map((progressiveStep, index) => (
-            <div
-              key={progressiveStep.id}
-              className={`${styles.step} ${
-                index === currentSequence ? styles.active : ""
-              }`}
-            >
-              <h3>{progressiveStep.title}</h3>
-              <p>{progressiveStep.description}</p>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className={styles.container}>
+      <div className={styles.content}>
+        <h2 className={styles.title}>{section.title}</h2>
+        <p className={styles.description}>{section.description}</p>
+        {steps && (
+          <div className={styles.progressiveSteps}>
+            {steps.map((progressiveStep, index) => (
+              <div
+                key={progressiveStep.id}
+                className={`${styles.step} ${
+                  index === currentSequence ? styles.active : ""
+                }`}
+              >
+                <h3>{progressiveStep.title}</h3>
+                <p>{progressiveStep.description}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -72,28 +72,57 @@ export const STYLE_CONFIG = {
     line: {
       standard: {
         stroke: "#cccccc",
-        strokeWidth: 1,
-        strokeDasharray: "5,5",
+        strokeWidth: 0.75,
+        strokeDasharray: "3,3",
+        opacity: 0.6,
       },
       highlighted: {
-        stroke: "#ff0000",
-        strokeWidth: 2,
+        stroke: "#666666",
+        strokeWidth: 1,
         strokeDasharray: "none",
+        opacity: 0.8,
       },
     },
     text: {
+      container: {
+        background: "rgba(255, 255, 255, 0.92)",
+        padding: 8,
+        borderRadius: 4,
+      },
       label: {
-        y: -40,
-        fontSize: "14px",
+        y: -30,
+        fontSize: "13px",
         fontWeight: 600,
-        fill: "#333",
+        fill: "#333333",
+        letterSpacing: "0.02em",
       },
       description: {
-        y: -25,
-        fontSize: "12px",
+        y: -15,
+        fontSize: "11px",
         fontWeight: 400,
-        fill: "#666",
+        fill: "#666666",
+        maxWidth: 180,
       },
+    },
+  },
+
+  eraLines: {
+    standard: {
+      stroke: "#cccccc",
+      strokeWidth: 0.75,
+      strokeDasharray: "4,4",
+      opacity: 0.4,
+    },
+    highlighted: {
+      stroke: "#666666",
+      strokeWidth: 1,
+      strokeDasharray: "4,4",
+      opacity: 0.6,
+    },
+    background: {
+      stroke: "#ffffff",
+      strokeWidth: 8,
+      opacity: 0.85,
     },
   },
   // Cursor styles
@@ -223,128 +252,70 @@ export const TIMELINE_DATA = {
 
   // Presidential view (Step 2)
   presidential: {
-    eras: [
+    legacies: [
       {
-        id: "founding-impact",
-        name: "Early Presidential Impact",
-        period: [1789, 1809],
-        description: "Washington and Adams establish the federal judiciary",
-        highlights: ["George Washington", "John Adams"],
-        annotations: [
-          {
-            year: 1789,
-            label: "Washington's Court",
-            description: "Establishes first Supreme Court with 6 justices",
-          },
-          {
-            year: 1796,
-            label: "First Court Expansion",
-            description: "Congress adds 7th justice to serve new circuits",
-          },
-          {
-            year: 1801,
-            label: "Marshall Court Begins",
-            description: "Adams appoints influential Chief Justice Marshall",
-          },
-        ],
-      },
-      {
-        id: "antebellum-courts",
-        name: "Antebellum Courts",
-        period: [1810, 1860],
-        description: "Expanding federal power through judicial appointments",
-        highlights: ["Thomas Jefferson", "Andrew Jackson"],
-        annotations: [
-          {
-            year: 1807,
-            label: "Jefferson's Influence",
-            description: "Appoints majority of Court during presidency",
-          },
-          {
-            year: 1837,
-            label: "Jackson's Reshaping",
-            description: "Appointed 6 justices, including Chief Justice Taney",
-          },
-        ],
-      },
-      {
-        id: "civil-war-reconstruction",
-        name: "Civil War & Reconstruction",
-        period: [1861, 1877],
-        description: "Reshaping the judiciary for a new constitutional order",
-        highlights: ["Abraham Lincoln", "Ulysses S. Grant"],
-        annotations: [
-          {
-            year: 1863,
-            label: "Lincoln's Appointments",
-            description: "Reshapes Court during Civil War with 5 justices",
-          },
-          {
-            year: 1869,
-            label: "Grant's Impact",
-            description: "Expands Court to 9 justices, still current size",
-          },
-        ],
-      },
-      {
-        id: "progressive-era",
-        name: "Progressive Era Changes",
-        period: [1901, 1932],
-        description: "New responses to industrialization",
-        highlights: ["Theodore Roosevelt", "William Howard Taft"],
-        annotations: [
-          {
-            year: 1902,
-            label: "TR's Influence",
-            description: "Theodore Roosevelt appoints 3 justices",
-          },
-          {
-            year: 1921,
-            label: "Taft to Chief Justice",
-            description: "Former President becomes Chief Justice",
-          },
-        ],
-      },
-      {
-        id: "new-deal-courts",
-        name: "New Deal Transformation",
-        period: [1933, 1945],
-        description: "FDR's impact on constitutional interpretation",
-        highlights: ["Franklin D. Roosevelt"],
-        annotations: [
+        id: "fdr-legacy",
+        president: "F. Roosevelt",
+        name: "Franklin D. Roosevelt",
+        description:
+          "Appointed 8 justices during the New Deal era, fundamentally reshaping constitutional interpretation",
+        period: [1937, 1943],
+        justiceIds: ["frankfurter", "douglas", "murphy", "jackson"],
+        highlights: [
           {
             year: 1937,
-            label: "Court-Packing Fight",
-            description: "FDR's failed attempt to expand the Court",
+            label: "Court-Packing Controversy",
+            description:
+              "Failed attempt to expand the Court led to ideological shift",
           },
           {
             year: 1941,
-            label: "FDR's Transformation",
-            description: "New Deal supporter majority achieved",
+            label: "Liberal Majority Achieved",
+            description:
+              "FDR appointees form majority, enabling New Deal programs",
           },
         ],
       },
       {
-        id: "modern-politics",
-        name: "Modern Court Politics",
-        period: [1969, 2024],
-        description: "Ideological battles over the Court's direction",
-        highlights: ["Richard Nixon", "Ronald Reagan", "Donald Trump"],
-        annotations: [
+        id: "washington-legacy",
+        president: "Washington",
+        name: "George Washington",
+        description:
+          "Established the first Supreme Court, appointing all six original justices",
+        period: [1789, 1796],
+        justiceIds: ["jay", "rutledge", "cushing"],
+        highlights: [
           {
-            year: 1969,
-            label: "Nixon's Influence",
-            description: "Begins conservative shift with 4 appointments",
+            year: 1789,
+            label: "First Supreme Court",
+            description: "Established with six justices",
           },
+          {
+            year: 1795,
+            label: "Constitutional Foundations",
+            description: "Set early precedents for federal judiciary",
+          },
+        ],
+      },
+      {
+        id: "reagan-legacy",
+        president: "Reagan",
+        name: "Ronald Reagan",
+        description:
+          "Appointed first woman justice and shaped modern conservative jurisprudence",
+        period: [1981, 1988],
+        justiceIds: ["oconnor", "scalia", "kennedy"],
+        highlights: [
           {
             year: 1981,
-            label: "Reagan's Impact",
-            description: "Appoints O'Connor as first woman justice",
+            label: "Historic Appointment",
+            description: "Sandra Day O'Connor becomes first woman justice",
           },
           {
-            year: 2017,
-            label: "Modern Appointments",
-            description: "Three appointments reshape conservative majority",
+            year: 1986,
+            label: "Conservative Shift",
+            description:
+              "Scalia appointment strengthens originalist interpretation",
           },
         ],
       },

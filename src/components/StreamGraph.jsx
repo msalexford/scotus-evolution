@@ -1,7 +1,5 @@
 // StreamGraph.jsx
 
-// #region - Imports
-
 import React, {
   useRef,
   useEffect,
@@ -14,10 +12,6 @@ import { STYLE_CONFIG, TIMELINE_DATA } from "./config";
 import _ from "lodash";
 import ViewTitle from "./ViewTitle";
 import UnifiedTimelineAnnotations from "./UnifiedTimelineAnnotations";
-
-// #endregion
-
-// #region - Tooltip Component
 
 const Tooltip = ({ data, position, width, height }) => {
   const tooltipRef = useRef(null);
@@ -55,11 +49,6 @@ const Tooltip = ({ data, position, width, height }) => {
   );
 };
 
-// #endregion
-
-// #region - Streamgraph
-
-// Create streamgraph
 const StreamGraph = ({
   data,
   width,
@@ -69,8 +58,6 @@ const StreamGraph = ({
   currentSequence,
   modernAnnotationIndex,
 }) => {
-  // #region - Component State and Refs
-
   const svgRef = useRef(null);
   const containerRef = useRef(null);
   const cursorGroupRef = useRef(null);
@@ -79,10 +66,6 @@ const StreamGraph = ({
   const [hoveredKey, setHoveredKey] = useState(null);
   const [tooltipData, setTooltipData] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-
-  // #endregion
-
-  // #region - Scales and Layout
 
   const { x, y, area } = useMemo(() => {
     if (!data?.series) return {};
@@ -110,11 +93,6 @@ const StreamGraph = ({
     return { x, y, area };
   }, [data, width, height, margins]);
 
-  // #endregion
-
-  // #region - Event Handlers
-
-  // Mouse move handler - disabled for steps 1 and 2
   const handleMouseMove = useCallback(
     (event, d) => {
       if (!x || !data || !svgRef.current || step === 1 || step === 2) return;
@@ -150,11 +128,6 @@ const StreamGraph = ({
     [handleMouseMove]
   );
 
-  // #endregion
-
-  // #region - Effects
-
-  // Clear tooltips effect
   useEffect(() => {
     const clearAllTooltips = () => {
       setHoveredKey(null);
@@ -175,24 +148,19 @@ const StreamGraph = ({
     clearAllTooltips();
   }, [step]);
 
-  // Main visualization effect
-  // Main visualization effect
   useEffect(() => {
     if (!data?.series || !x || !y || !area) return;
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    // Create layers with correct z-indexing (base → streams → annotations → interaction)
     const baseGroup = svg.append("g").attr("class", "base-layer");
     const streamsGroup = svg.append("g").attr("class", "streams-layer");
     const annotationsGroup = svg.append("g").attr("class", "annotations-layer");
     const interactionGroup = svg.append("g").attr("class", "interaction-layer");
 
-    // Store reference to annotations group for UnifiedTimelineAnnotations
     annotationsGroupRef.current = annotationsGroup;
 
-    // Setup clip path
     const defs = baseGroup.append("defs");
     defs
       .append("clipPath")
@@ -203,24 +171,43 @@ const StreamGraph = ({
       .attr("width", width - margins.left - margins.right)
       .attr("height", height - margins.top - margins.bottom);
 
-    // Refined streams with smoother transitions
     const paths = streamsGroup
       .attr("clip-path", "url(#clip)")
       .selectAll("path.stream")
       .data(data.series)
       .join("path")
-      .attr("class", (d) => `stream-path ${d.key}`)
+      .attr("class", (d) => {
+        console.log("Creating stream for data:", d); // Debug logging
+        let className = "stream-path";
+
+        if (step === 2) {
+          // For presidential view, use the exact key from the data
+          className += ` stream-${d.key}`;
+          console.log("Created presidential stream class:", className);
+        } else {
+          className += ` ${d.key}`;
+        }
+
+        return className;
+      })
       .attr("d", area)
       .attr("fill", (d) => data.colors[d.key])
       .attr("stroke", STYLE_CONFIG.stream.stroke.color)
-      .attr("stroke-width", step === 3 ? 1.5 : 1)
-      .attr("stroke-opacity", 0.7)
-      .attr("stroke-linejoin", "round")
-      .attr("stroke-linecap", "round")
+      .attr(
+        "stroke-width",
+        step === 3
+          ? STYLE_CONFIG.stream.stroke.width.justice
+          : STYLE_CONFIG.stream.stroke.width.default
+      )
+      .attr("stroke-opacity", STYLE_CONFIG.stream.stroke.opacity)
+      .attr("stroke-linejoin", STYLE_CONFIG.stream.stroke.join)
+      .attr("stroke-linecap", STYLE_CONFIG.stream.stroke.cap)
       .style("opacity", STYLE_CONFIG.stream.opacity)
-      .style("transition", "opacity 200ms ease-out");
+      .style(
+        "transition",
+        `opacity ${STYLE_CONFIG.cursor.interaction.transitionDuration} ease`
+      );
 
-    // Add cursor group for hover interactions (only for step 3)
     const cursorGroup = interactionGroup
       .append("g")
       .attr("class", "cursor")
@@ -229,7 +216,6 @@ const StreamGraph = ({
 
     cursorGroupRef.current = cursorGroup.node();
 
-    // Add vertical cursor line
     cursorGroup
       .append("line")
       .attr("y1", margins.top)
@@ -238,7 +224,6 @@ const StreamGraph = ({
       .attr("stroke-width", STYLE_CONFIG.cursor.line.strokeWidth)
       .attr("stroke-dasharray", STYLE_CONFIG.cursor.line.strokeDasharray);
 
-    // Add year label for cursor
     cursorGroup
       .append("text")
       .attr("y", margins.top - 10)
@@ -246,7 +231,6 @@ const StreamGraph = ({
       .attr("font-size", STYLE_CONFIG.cursor.label.fontSize)
       .attr("fill", STYLE_CONFIG.cursor.label.fill);
 
-    // Add interaction layer for hover effects
     interactionGroup
       .attr("clip-path", "url(#clip)")
       .selectAll("path.hover-layer")
@@ -272,13 +256,9 @@ const StreamGraph = ({
         const [mouseX] = d3.pointer(event);
         const year = Math.round(x.invert(mouseX));
 
-        // Update cursor line position
         cursorGroup.select("line").attr("x1", mouseX).attr("x2", mouseX);
-
-        // Update year label
         cursorGroup.select("text").attr("x", mouseX).text(year);
 
-        // Find data for current year and update tooltip
         const yearData = d.find((point) => point.data.year === year);
         if (yearData) {
           const justiceCount = Math.round(Math.abs(yearData[1] - yearData[0]));
@@ -310,16 +290,13 @@ const StreamGraph = ({
         cursorGroup.style("display", "none");
       });
 
-    // Add x-axis with refined styling
     const xAxis = baseGroup
       .append("g")
       .attr("class", "x-axis")
       .attr("transform", `translate(0,${height - margins.bottom})`);
 
-    // Customize axis appearance
     xAxis.call(d3.axisBottom(x).ticks(12).tickFormat(d3.format("d")));
 
-    // Refine axis styling
     xAxis.select(".domain").attr("stroke", "#666").attr("stroke-width", 1);
 
     xAxis
@@ -331,7 +308,7 @@ const StreamGraph = ({
     xAxis
       .selectAll(".tick text")
       .attr("fill", "#666")
-      .attr("font-size", "12px")
+      .attr("font-size", STYLE_CONFIG.axis.font.size)
       .attr("font-weight", "400");
   }, [
     data,
@@ -345,9 +322,6 @@ const StreamGraph = ({
     setHoveredKey,
     setTooltipData,
   ]);
-  // #endregion
-
-  // #region - Render
 
   return (
     <div className="relative w-full">
@@ -365,8 +339,8 @@ const StreamGraph = ({
           height={height}
           margins={margins}
           x={x}
-          mainGroup={annotationsGroupRef.current} // Use the ref instead of undefined mainGroup
-          modernAnnotationIndex={modernAnnotationIndex} // Pass through the prop directly
+          mainGroup={annotationsGroupRef.current}
+          modernAnnotationIndex={modernAnnotationIndex}
         />
       )}
       <ViewTitle step={step} margins={margins} />
@@ -378,12 +352,9 @@ const StreamGraph = ({
           height={height}
         />
       )}
+      <p className="text-start text-sm mt-4">Source: U.S. Senate</p>
     </div>
   );
-
-  // #endregion
 };
-
-// #endregion
 
 export default StreamGraph;
